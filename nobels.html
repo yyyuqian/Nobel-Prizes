@@ -1,0 +1,348 @@
+<!DOCTYPE html >
+<!-- this html is design for searching noble prize; a brief introduction is written inside related function. Javascript is written above the html. as this nobles.html opened from folder, the category in select field should be available. if it is not available, please try to open this file from folder in Brackets. thanks for your time.  -->
+<html >
+<head>
+ <link href="default.css" rel="stylesheet" type="text/css" media="all" />    
+<script>
+    // Get the info from the json doc
+function getFile(url) {
+// access to the Json file
+    'use strict';
+  var jsFile = new XMLHttpRequest();
+  jsFile.open("GET", url, false);
+  jsFile.send(null);
+  return jsFile.responseText;
+}
+
+
+function load() {
+// capture category from json file
+  var txt = "";
+  var upper = "";
+  var xmlDoc = getFile("prizesByYear.json");
+  var jsonss = JSON.parse(xmlDoc);
+
+  txt += "<select id=mySelect>";
+  txt += "<option selected=selected disabled=disabled>Choose</option>";
+  for (i in jsonss.prizes) {
+    if (upper.includes(jsonss.prizes[i].category) === false) {
+      upper += jsonss.prizes[i].category;
+      txt += "<option>" + jsonss.prizes[i].category[0].toUpperCase() + jsonss.prizes[i].category.slice(1);
+    }
+  }
+  txt += "</select>";
+  document.getElementById("selForm").innerHTML = txt;
+}
+
+
+function getSelectedField(index) {
+// Get the selection from the dropbox and return the value
+  var s = document.getElementById("mySelect");
+  var t = s.options[s.selectedIndex].text;
+  var low = t[0].toLowerCase() + t.slice(1)
+  document.getElementById("demo").innerHTML = low;
+  return low;
+}
+
+    function checkGender(gender){
+    // get gender
+                var both = document.getElementById('gender_both');
+                var male = document.getElementById('gender_male');
+               var female = document.getElementById('gender_female');
+        
+                if (gender == 'both'){
+                    male.checked = false;
+                    female.checked = false;
+                    var t = both.value;
+                } else if (gender == 'male') {
+                    both.checked = false;
+                    female.checked = false;
+                    var t = male.value;
+                } else if (gender == 'female') {
+                    both.checked = false;
+                    male.checked = false;
+                    var t = female.value;
+                }
+        // change the innerHTML as the selcted gender; it is used for debug, in final the gcheck will be hidden
+        document.getElementById("gcheck").innerHTML = t;
+    }
+    
+    function checkyear(){
+        // user can select single year or range of years
+         var single_year = document.getElementById('search_single_year').value;
+         var range_year = document.getElementById('search_range_year').value;
+        var s = document.getElementById("single_year");
+        var r =document.getElementById("range_year");
+        toYear = parseInt(range_year);
+        year = parseInt(single_year);
+        if ( range_year != ''){
+            var year_range = String(year+' '+toYear);
+        }
+         else if ( single_year !=''){
+            var year_range = String(year);
+        }
+        // used to debug, in final the yrange element will be hidden
+         document.getElementById("yrange").innerHTML = year_range;
+    }
+  
+    
+    function mytable(){
+        // generate table, capter all information that used for match laureates
+        var cat = document.getElementById("demo").innerHTML;
+        var gender = document.getElementById("gcheck").innerHTML;
+        var years = document.getElementById("yrange").innerHTML;
+        var single_year = document.getElementById('search_single_year').value;
+         var range_year = document.getElementById('search_range_year').value;
+        toYear = parseInt(range_year);
+        year = parseInt(single_year);
+        var xmlDoc = getFile("winnersByID.json");
+        var jsonss = JSON.parse(xmlDoc);
+        var laureates = jsonss.laureates;
+        var pre_pick = [];
+        var g = document.getElementById("gender")
+        var table_all='';
+        // display the gender radio button
+        g.style.display="inline";
+        
+        for (var i=0; i<laureates.length; i++ ){
+          // core loop to generate table; first check gender  
+            if (gender =='both'){
+                pre_pick.push(laureates[i]);
+                
+                prize=laureates[i].prizes;
+                // check user is searching range of years or single year
+                    if (range_year != ''){
+                        // matching information
+                        if (prize[0].category == cat && parseInt(prize[0].year)>=year && parseInt(prize[0].year) <= toYear){
+                        // details and summary tag provide a clickable box and can display more information
+                         var table ='<details align="center">';
+                          table+='<summary class="clikbox" style="font-family:Optima;">';
+                          table+="<b>Year of Award: </b>"+prize[0].year+" ";
+                          table+='<b>Name: </b>'+laureates[i].firstname+' '+laureates[i].surname;
+                          table+="<b> Prize: </b>"+prize[0].category+"<br>";
+                          table+="<b> Motivation: </b>"+prize[0].motivation +"</summary>";
+                         var moredetails ='<table align="center"> ';
+                         moredetails+= '<tr><td><b>Catagory: </b>'+prize[0].category+'</td></tr>';
+                         moredetails+='<tr><td><b>Born: </b>';
+                         moredetails+= laureates[i].born+"   ";
+                         moredetails+=laureates[i].bornCity;
+                         moredetails+="   "+laureates[i].bornCountry+"</td></tr>";
+                   if (laureates[i].died == '0000-00-00'){
+                         moredetails+="<tr><td><b>Die: </b>"+laureates[i].died+"</td></tr>";
+                        }
+                         else{
+                              moredetails+="<tr><td><b>Die:</b>"+laureates[i].died+"     "+laureates[i].diedCity+"   "+laureates[i].diedCountry+"</td></tr>";
+                         }
+                         moredetails +="<tr><td><b>Motivation:</b>"+prize[0].motivation+"</td></tr>";
+                         var aff=prize[0].affiliations[0];
+                         if (aff == ''){
+                             moredetails+="<tr><td><b>Affiliation: </b>Unknown affiliations</td></tr></table>"
+                         }
+                         else{
+                             moredetails +="<tr><td><b>Affiliation: </b>"+aff.name+" ";
+                             moredetails +=" "+aff.city+" ";
+                             moredetails += " "+aff.country+"</td></tr></table>";
+                         }
+                         table+=moredetails;
+                            table+='</details>';
+                          table_all+=table;
+                        }
+                    }
+                else if (single_year != ''){
+                     if (prize[0].category == cat && parseInt(prize[0].year) == year ){
+                         
+                          var table ='<details align="center">';
+                          table+='<summary class="clikbox" style="font-family:Optima;">';
+                          table+="<b>Year of Award: </b>"+prize[0].year+" ";
+                          table+='<b>Name: </b>'+laureates[i].firstname+' '+laureates[i].surname;
+                          table+="<b> Prize: </b>"+prize[0].category+"<br>";
+                             table+="<b> Motivation: </b>"+prize[0].motivation +"</summary>";
+                         var moredetails ='<table align="center"> ';
+                         moredetails+= '<tr><td><b>Catagory: </b>'+prize[0].category+'</td></tr>';
+                         moredetails+='<tr><td><b>Born: </b>';
+                         moredetails+= laureates[i].born+"   ";
+                         moredetails+=laureates[i].bornCity;
+                         moredetails+="   "+laureates[i].bornCountry+"</td></tr>";
+                   if (laureates[i].died == '0000-00-00'){
+                         moredetails+="<tr><td><b>Die: </b>"+laureates[i].died+"</td></tr>";
+                        }
+                         else{
+                              moredetails+="<tr><td><b>Die:</b>"+laureates[i].died+"     "+laureates[i].diedCity+"   "+laureates[i].diedCountry+"</td></tr>";
+                         }
+                         moredetails +="<tr><td><b>Motivation:</b>"+prize[0].motivation+"</td></tr>";
+                         var aff=prize[0].affiliations[0];
+                         if (aff == ''){
+                             moredetails+="<tr><td><b>Affiliation: </b>Unknown affiliations</td></tr></table>";
+                         }
+                         else{
+                             moredetails +="<tr><td><b>Affiliation: </b>"+aff.name+" ";
+                             moredetails +=" "+aff.city+" ";
+                             moredetails += " "+aff.country+"</td></tr></table>";
+                         }
+                         table+=moredetails;
+                            table+='</details>';
+                          table_all+=table;
+                        }
+                }
+                    
+                }
+             else {
+                if (laureates[i].gender == gender){
+                pre_pick.push(laureates[i]);
+                     prize=laureates[i].prizes;
+                    pre_pick.push(laureates[i]);    
+                    if (range_year != ''){
+                        if (prize[0].category == cat && parseInt(prize[0].year)>=year && parseInt(prize[0].year) <= toYear){
+                        
+                          var table ='<details align="center">';
+                          table+='<summary class="clikbox" style="font-family:Optima;">';
+                          table+="<b>Year of Award: </b>"+prize[0].year+" ";
+                          table+='<b>Name: </b>'+laureates[i].firstname+' '+laureates[i].surname;
+                          table+="<b> Prize: </b>"+prize[0].category+"<br>";
+                             table+="<b> Motivation: </b>"+prize[0].motivation +"</summary>";
+                         var moredetails ='<table align="center"> ';
+                         moredetails+= '<tr><td><b>Catagory: </b>'+prize[0].category+'</td></tr>';
+                         moredetails+='<tr><td><b>Born: </b>';
+                         moredetails+= laureates[i].born+"   ";
+                         moredetails+=laureates[i].bornCity;
+                         moredetails+="   "+laureates[i].bornCountry+"</td></tr>";
+                   if (laureates[i].died == '0000-00-00'){
+                         moredetails+="<tr><td><b>Die: </b>"+laureates[i].died+"</td></tr>";
+                        }
+                         else{
+                              moredetails+="<tr><td><b>Die:</b>"+laureates[i].died+"     "+laureates[i].diedCity+"   "+laureates[i].diedCountry+"</td></tr>";
+                         }
+                         moredetails +="<tr><td><b>Motivation:</b>"+prize[0].motivation+"</td></tr>";
+                         var aff=prize[0].affiliations[0];
+                         if (aff == ''){
+                             moredetails+="<tr><td><b>Affiliation: </b>Unknown affiliations</td></tr></table>"
+                         }
+                         else{
+                             moredetails +="<tr><td><b>Affiliation: </b>"+aff.name+" ";
+                             moredetails +=" "+aff.city+" ";
+                             moredetails += " "+aff.country+"</td></tr></table>";
+                         }
+                         table+=moredetails;
+                            table+='</details>';
+                          table_all+=table;
+                        }
+                    }
+                else if (single_year != ''){
+                     if (prize[0].category == cat && parseInt(prize[0].year) == year ){
+                         var table ='<details align="center">';
+                          table+='<summary class="clikbox" style="font-family:Optima;">';
+                          table+="<b>Year of Award: </b>"+prize[0].year+" ";
+                          table+='<b>Name: </b>'+laureates[i].firstname+' '+laureates[i].surname;
+                          table+="<b> Prize: </b>"+prize[0].category+"<br>";
+                             table+="<b> Motivation: </b>"+prize[0].motivation +"</summary>";
+                         var moredetails ='<table align="center"> ';
+                         moredetails+= '<tr><td><b>Catagory: </b>'+prize[0].category+'</td></tr>';
+                         moredetails+='<tr><td><b>Born: </b>';
+                         moredetails+= laureates[i].born+"   ";
+                         moredetails+=laureates[i].bornCity;
+                         moredetails+="   "+laureates[i].bornCountry+"</td></tr>";
+                   if (laureates[i].died == '0000-00-00'){
+                         moredetails+="<tr><td><b>Die: </b>"+laureates[i].died+"</td></tr>";
+                        }
+                         else{
+                              moredetails+="<tr><td><b>Die:</b>"+laureates[i].died+"     "+laureates[i].diedCity+"   "+laureates[i].diedCountry+"</td></tr>";
+                         }
+                         moredetails +="<tr><td><b>Motivation:</b>"+prize[0].motivation+"</td></tr>";
+                         var aff=prize[0].affiliations[0];
+                         if (aff == ''){
+                             moredetails+="<tr><td><b>Affiliation: </b>Unknown affiliations</td></tr></table>";
+                         }
+                         else{
+                             moredetails +="<tr><td><b>Affiliation: </b>"+aff.name+" ";
+                             moredetails +=" "+aff.city+" ";
+                             moredetails += " "+aff.country+"</td></tr></table>";
+                         }
+                         table+=moredetails;
+                            table+='</details>';
+                          table_all+=table;
+                }
+            
+                }
+        }
+            
+                 
+        }
+    }
+       
+        document.getElementById("main").innerHTML =table_all;
+    }
+            
+            function hideYear() {
+                // hide the range of year when single year search is selected
+                var rangeYear = document.getElementById('search_range_year');
+                var radioRange = document.getElementById('range_year');
+                radioRange.checked = false;
+                rangeYear.value = '';
+                rangeYear.style.backgroundColor = '#b2aaaa';
+                rangeYear.disabled = true;
+                
+            }
+            function showYear() {
+                // show the range of year when range year search is selected
+                var rangeYear = document.getElementById('search_range_year');
+                var singleRange = document.getElementById('single_year');
+                singleRange.checked = false;
+                rangeYear.value = '';
+                rangeYear.style.backgroundColor = '#fff';
+                rangeYear.disabled = false;
+            }
+            
+    </script>
+    
+</head>
+
+<body onload="load()">   
+<!-- Title-->
+    <h1 style="color: #B8860B; text-align: center; font-family:Optima; font-size: 34px; "> THE NOBEL PRIZE</h1>
+    <div id="header-intro"> 
+    <div id="header" class="container">
+    </div>
+    </div>
+
+<!-- header --->
+    <div id="wrapper">
+    <p style="margin-bottom: 0; margin-top: 0;font-size: 15px; color: dimgrey" >▲ Crystals of ammonium chloride in different colors under the microscope</p>
+    <div id="three-column" class="container">
+ <!-- selection field-->
+    <h1>Nobel Laureates of All Times</h1>
+    <h3>Fill the fields below to filter the winner results or press Submit to see everthing</h3>
+    <div id="choosefield">
+      <span>Choose a category: </span>
+      <form id="selForm" onChange="getSelectedField(this.selectedIndex);">
+      </form>
+        <p id="demo" hidden=""></p><br>
+        
+        <span>Year of Award:</span>
+        <input style='margin-left: 0' type='text' id='search_single_year' placeholder='From year' onchange="checkyear()">
+        <input style='margin-left: 0' type='text' id='search_range_year' placeholder='To year' onchange="checkyear()"><br>
+        <p>Single year: <input type="radio" name="select"  id="single_year" onclick="hideYear()"> Range of years: <input type="radio" name="select" id="range_year"checked onclick="showYear()"></p>
+        <p id="yrange" hidden=""></p>
+        
+        <p id="gcheck" hidden="">both</p><br>
+
+      </div>
+        <div>
+          <input type='button' id='submit_button' value='Submit' onclick="mytable()">
+          
+        </div>
+        </div>
+      </div>
+
+      <!-- generate Table -->
+        <p id='gender' style="display: none;font-size: 15px;" > Gender:
+        <input type='radio' id='gender_both' value="both" name = "c" checked onclick='checkGender("both"); mytable()'>Both
+        <input type='radio' id='gender_male' name ="c" value = "male" onclick='checkGender("male"); mytable()'>Male
+        <input type='radio' id='gender_female' name="c" value="female"
+               onclick='checkGender("female"); mytable()'>Female</p>
+    
+     <section id="main"></section>
+ 
+    </body>
+</html>
+
+      
